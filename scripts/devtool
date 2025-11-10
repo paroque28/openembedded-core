@@ -23,7 +23,7 @@ from typing import List
 scripts_path = os.path.dirname(os.path.realpath(__file__))
 lib_path = scripts_path + '/lib'
 sys.path = sys.path + [lib_path]
-from devtool import DevtoolError, setup_tinfoil
+from devtool import DevtoolError, Workspace, setup_tinfoil
 import scriptutils
 import argparse_oe
 logger = scriptutils.logger_create('devtool')
@@ -88,7 +88,7 @@ class Context:
 
 
 def read_workspace(basepath, context):
-    workspace = {}
+    workspace = Workspace()
     if not os.path.exists(os.path.join(context.config.workspace_path, 'conf', 'layer.conf')):
         if context.fixed_setup:
             logger.error("workspace layer not set up")

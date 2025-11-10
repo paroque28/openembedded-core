@@ -16,7 +16,8 @@ import bb.utils
 import argparse_oe
 import oe.types
 
-from devtool import exec_fakeroot_no_d, setup_tinfoil, check_workspace_recipe, DevtoolError
+from devtool import (exec_fakeroot_no_d, setup_tinfoil, check_workspace_recipe,
+                     DevtoolError, split_mc_target)
 
 logger = logging.getLogger('devtool')
 
@@ -139,11 +140,12 @@ def deploy(args, config, basepath, workspace):
     import oe.utils
 
     check_workspace_recipe(workspace, args.recipename, checksrc=False)
+    _, recipe_name = split_mc_target(args.recipename)
 
     tinfoil = setup_tinfoil(basepath=basepath)
     try:
         try:
-            rd = tinfoil.parse_recipe(args.recipename)
+            rd = tinfoil.parse_recipe(recipe_name)
         except Exception as e:
             raise DevtoolError('Exception parsing recipe %s: %s' %
                             (args.recipename, e))
