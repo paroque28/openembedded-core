@@ -15,6 +15,56 @@ import logging
 import re
 import codecs
 
+
+def split_mc_target(target):
+    """Return (mc, target) tuple for a potentially multiconfig qualified name."""
+    if not isinstance(target, str):
+        return (None, target)
+
+    import bb.runqueue
+
+    return bb.runqueue.split_mc(target)
+
+
+class Workspace(dict):
+    """Dictionary-like helper that understands multiconfig-qualified keys."""
+
+    @staticmethod
+    def _normalise(key):
+        mc, pn = split_mc_target(key)
+        return pn
+
+    def __contains__(self, key):
+        return super().__contains__(self._normalise(key))
+
+    def __getitem__(self, key):
+        return super().__getitem__(self._normalise(key))
+
+    def __setitem__(self, key, value):
+        return super().__setitem__(self._normalise(key), value)
+
+    def get(self, key, default=None):
+        return super().get(self._normalise(key), default)
+
+    def pop(self, key, *args):
+        return super().pop(self._normalise(key), *args)
+
+    def setdefault(self, key, default=None):
+        return super().setdefault(self._normalise(key), default)
+
+    def update(self, other=None, **kwargs):
+        if other:
+            if hasattr(other, 'keys'):
+                for key in other:
+                    super().__setitem__(self._normalise(key), other[key])
+            else:
+                for key, value in other:
+                    super().__setitem__(self._normalise(key), value)
+        if kwargs:
+            for key, value in kwargs.items():
+                super().__setitem__(self._normalise(key), value)
+        return None
+
 logger = logging.getLogger('devtool')
 
 class DevtoolError(Exception):
@@ -116,6 +166,7 @@ def setup_tinfoil(config_only=False, basepath=None, tracking=False):
 def parse_recipe(config, tinfoil, pn, appends, filter_workspace=True):
     """Parse the specified recipe"""
     import bb.providers
+    _, pn = split_mc_target(pn)
     try:
         recipefile = tinfoil.get_recipe_file(pn)
     except bb.providers.NoProvider as e:
@@ -141,8 +192,7 @@ def check_workspace_recipe(workspace, pn, checksrc=True, bbclassextend=False):
     Check that a recipe is in the workspace and (optionally) that source
     is present.
     """
-    import bb.runqueue
-    _, pn = bb.runqueue.split_mc(pn)
+    _, pn = split_mc_target(pn)
 
     workspacepn = pn
 

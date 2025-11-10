@@ -19,7 +19,8 @@ from enum import Enum
 
 import scriptutils
 import bb
-from devtool import exec_build_env_command, setup_tinfoil, check_workspace_recipe, DevtoolError, parse_recipe
+from devtool import (exec_build_env_command, setup_tinfoil, check_workspace_recipe,
+                     DevtoolError, parse_recipe, split_mc_target)
 from devtool.standard import get_real_srctree
 from devtool.ide_plugins import BuildTool
 
@@ -779,7 +780,8 @@ def ide_setup(args, config, basepath, workspace):
 
     # Explicitely passing some special recipes does not make sense
     for recipe in args.recipenames:
-        if recipe in ['meta-ide-support', 'build-sysroots']:
+        _, base_recipe = split_mc_target(recipe)
+        if base_recipe in ['meta-ide-support', 'build-sysroots']:
             raise DevtoolError("Invalid recipe: %s." % recipe)
 
     # Collect information about tasks which need to be bitbaked
@@ -822,7 +824,8 @@ def ide_setup(args, config, basepath, workspace):
                     "One image recipe is required as the rootfs for the remote development.")
                 invalid_params = True
             for modified_recipe_name in recipes_modified_names:
-                if modified_recipe_name.startswith('nativesdk-') or modified_recipe_name.endswith('-native'):
+                _, base_modified = split_mc_target(modified_recipe_name)
+                if base_modified.startswith('nativesdk-') or base_modified.endswith('-native'):
                     logger.error(
                         "Only cross compiled recipes are support. %s is not cross." % modified_recipe_name)
                     invalid_params = True
